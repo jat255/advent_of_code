@@ -70,6 +70,7 @@ What is the size of the largest area that isn't infinite?
 import numpy as np
 import scipy.spatial.distance as spd
 from string import ascii_uppercase
+from tqdm import tqdm
 
 if __name__ == '__main__':
 
@@ -80,14 +81,10 @@ if __name__ == '__main__':
     else:
         inp = np.loadtxt('input', delimiter=',', dtype=int)
 
-    dist_mat = np.zeros((inp[:, 1].max() + 2, inp[:, 0].max() + 2,
-                         len(inp)), dtype=int)
+    dist_mat = np.zeros((inp[:, 0].max()+1, inp[:, 1].max()+1), dtype='|U2')
+    res = dist_mat.copy()
 
     print(dist_mat.shape)
-
-    # print(inp)
-    # print(inp.shape)
-    # print()
 
     if is_test:
         pos_list = [' {}'.format(a) for a in ascii_uppercase]
@@ -95,56 +92,53 @@ if __name__ == '__main__':
         pos_list = [' {}'.format(a) for a in ascii_uppercase]
         pos_list += ['{}{}'.format(a, a) for a in ascii_uppercase]
 
-    for i, pos in enumerate(inp):
-        print(i, pos, pos_list[i])
-
-        a = dist_mat[:, :, i]
-
-        it = np.nditer(a, flags=['multi_index'])
-        while not it.finished:
-            this_point = it.multi_index[0], it.multi_index[1]
-            a[this_point] = int(spd.cityblock(this_point, pos))
-            it.iternext()
-
-    res = np.zeros_like(dist_mat[:, :, 0], dtype='|U2')
-    a = dist_mat[:, :, 0]
-    it = np.nditer(a, flags=['multi_index'])
+    it = np.nditer(dist_mat, flags=['multi_index'])
+    print(dist_mat.size)
+    t = tqdm(total=dist_mat.size)
     while not it.finished:
         this_point = it.multi_index[0], it.multi_index[1]
-        dist_row = dist_mat[this_point]
-        this_min = dist_row.min()
-        this_argmin = dist_row.argmin()
-        min_matches = np.where(dist_row == this_min)[0]
-        # print(len(min_matches), min_matches)
-        # Multiple points were at minimum distance
-        if len(min_matches) > 1:
-            res[this_point] = '..'
+        t.set_description('{}, {}'.format(*this_point))
+
+        # For each point, find the closest point in the input list:
+        # print()
+        # print(this_point)
+        dist_list = []
+        for pos in inp:
+            dist = spd.cityblock(this_point, pos)
+            # print(pos, 'distance is:', dist)
+            dist_list.append(dist)
+        # print('distance list:', dist_list)
+        min_val = np.array(dist_list).min()
+        min_pos = np.array(dist_list).argmin()
+        # print('Min dist is {} at position {}'.format(min_val, min_pos))
+        min_positions = np.where(np.array(dist_list) == min_val)[0]
+        # print(min_positions)
+        if len(min_positions) > 1:
+            val = '..'
         else:
-            res[this_point] = pos_list[this_argmin].lower()
+            if min_val == 0:
+                val = pos_list[min_pos]
+            else:
+                val = pos_list[min_pos].lower()
+        # print(val)
+        res[this_point] = val
+        t.update()
         it.iternext()
+    t.close()
+    res = res.T
 
-    for i, pos in enumerate(inp):
-        print(pos, pos_list[i])
-        res[pos[0], pos[1]] = pos_list[i]
-
-    print(res.T)
+    print(res)
+    print()
+    inf_values = np.unique(np.char.upper(np.hstack((res[0, :], res[-1, :],
+                                                    res[:, 0], res[:, -1]))))
+    print(inf_values)
     unique, counts = np.unique(np.char.upper(res), return_counts=True)
     counted_results = dict(zip(unique, counts))
-    print(counted_results)
+    for v in inf_values:
+        del counted_results[v]
 
-    x_min, x_max = np.min(inp[:, 0]), np.max(inp[:, 0])
-    y_min, y_max = np.min(inp[:, 1]), np.max(inp[:, 1])
-
-    infinite_locations = np.where(np.logical_or(
-        np.logical_or(inp[:, 0] == x_min, inp[:, 0] == x_max),
-        np.logical_or(inp[:, 1] == y_min, inp[:, 1] == y_max)))[0]
-
-    for i in infinite_locations:
-        print(pos_list[i])
-        del counted_results[pos_list[i]]
-    del counted_results['..']
     final_res = sorted(counted_results.items(), key=lambda k: k[1],
                        reverse=True)
     print()
-    print("Largest section is {} with area of {}".format(final_res[0][0],
+    print("Largest section is{} with area of {}".format(final_res[0][0],
                                                          final_res[0][1]))
