@@ -68,7 +68,7 @@ What is the size of the largest area that isn't infinite?
 """
 
 import numpy as np
-import scipy as sp
+import scipy.spatial.distance as spd
 from string import ascii_uppercase
 
 if __name__ == '__main__':
@@ -80,10 +80,10 @@ if __name__ == '__main__':
     else:
         inp = np.loadtxt('input', delimiter=',', dtype=int)
 
-    blank_cell = '  '
-    dist_mat = np.full((inp[:, 1].max() + 2, inp[:, 0].max() + 2), blank_cell)
+    dist_mat = np.zeros((inp[:, 1].max() + 2, inp[:, 0].max() + 2,
+                         len(inp)), dtype=int)
 
-    # print(dist_mat)
+    print(dist_mat.shape)
 
     # print(inp)
     # print(inp.shape)
@@ -95,46 +95,38 @@ if __name__ == '__main__':
         pos_list = [' {}'.format(a) for a in ascii_uppercase]
         pos_list += ['{}{}'.format(a, a) for a in ascii_uppercase]
 
-    # print(pos_list)
-    for i, (y, x) in enumerate(inp):
-        # print(i, x, y, pos_list[i])
-        dist_mat[x, y] = pos_list[i]
-        # dist_mat[0, 0] = ' A'
-        # dist_mat[5, 5] = ' B'
-        # dist_mat[7, 7] = ' C'
-        # dist_mat[3, 6] = ' C'
+    for i, pos in enumerate(inp):
+        print(i, pos, pos_list[i])
 
-    dist = 1
-    while blank_cell in dist_mat:
-        for p in pos_list[:10]:
-            print()
-            print(p)
+        a = dist_mat[:, :, i]
 
-            locs = np.where(np.logical_or(dist_mat == p, dist_mat ==
-                                          p.lower()))
-            locs = np.vstack(locs).T
+        it = np.nditer(a, flags=['multi_index'])
+        while not it.finished:
+            this_point = it.multi_index[0], it.multi_index[1]
+            a[this_point] = int(spd.cityblock(this_point, pos))
+            it.iternext()
 
-            for ii, (yi, xi) in enumerate(locs):
-                to_change = [(yi + dist, xi),
-                             (yi, xi + dist),
-                             (yi - dist, xi),
-                             (yi, xi - dist)]
-                for p_to_change in to_change:
-                    try:
-                        current_val = dist_mat[p_to_change]
-                        print('{}, value: "{}"'.format(
-                            p_to_change,
-                            current_val))
-                        if p_to_change[0] < 0 or p_to_change[1] < 0:
-                            # Don't set any negative values
-                            continue
-                        if current_val == blank_cell:
-                            dist_mat[p_to_change] = p.lower()
-                        elif current_val == p.lower() or current_val == p:
-                            pass
-                        else:
-                            dist_mat[p_to_change] = '..'
-                    except IndexError:
-                        pass
+    res = np.zeros_like(dist_mat[:,:,0], dtype='|U2')
+    a = dist_mat[:, :, 0]
+    it = np.nditer(a, flags=['multi_index'])
+    while not it.finished:
+        this_point = it.multi_index[0], it.multi_index[1]
+        dist_row = dist_mat[this_point]
+        this_min = dist_row.min()
+        this_argmin = dist_row.argmin()
+        min_matches = np.where(dist_row == this_min)[0]
+        # print(len(min_matches), min_matches)
+        # Multiple points were at minimum distance
+        if len(min_matches) > 1:
+            res[this_point] = '..'
+        else:
+            res[this_point] = pos_list[this_argmin].lower()
+        it.iternext()
 
-    print(dist_mat)
+    for i, pos in enumerate(inp):
+        print(pos, pos_list[i])
+        res[pos[0],pos[1]] = pos_list[i]
+
+    print(res.T)
+    unique, counts = np.unique(np.char.upper(res), return_counts=True)
+    print(dict(zip(unique, counts)))
