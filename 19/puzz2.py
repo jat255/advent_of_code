@@ -64,6 +64,8 @@ import numpy as np
 import matplotlib.animation as animation
 import random
 from tqdm import tqdm
+import multiprocessing as mp
+import pickle
 
 class Computer():
     def __init__(self, name, inp, 
@@ -341,11 +343,7 @@ def run_part2_one_value(inp, xy, size):
     return (x, y, c.last_output)
 
 
-import multiprocessing as mp
-import pickle
-
-if __name__ == '__main__':
-
+def run_part2_1000():
     with open('19/input', 'r') as f:
         inp = f.readline()
 
@@ -366,33 +364,35 @@ if __name__ == '__main__':
     with open('19/puzz2.pk', 'wb') as f:
         pickle.dump(results, f)
 
-    # arr = run_part2(inp, size)
+from skimage.util import view_as_windows
 
+if __name__ == '__main__':
 
-    # np.savez_compressed(f'19/part2-{size}.npz', arr)
+    with open('19/puzz2.pk', 'rb') as f:
+        results = pickle.load(f)
 
+    size = 1000
+    arr = np.zeros((size, size), dtype=int)
+        
+    for tup in results:
+        x, y, val = tup
+        arr[y,x] = val 
 
+    # plt.imshow(arr)
+    # plt.show()
 
-    # c = Computer('tractorbeam', inp, debug_level='off')    
-    # c.run_intcode(1)
-    # c.run_intcode(1)
-    # print(c.last_output)
-    
-    # two input instructions to request the X and Y position to which the 
-    # drone should be deployed. 
+    print('computing windows...')
+    windows = view_as_windows(arr, (100,100))
 
-    # c.run_intcode(new_input=0)
-    # c.run_intcode(new_input=0)
+    match_array = np.ones((100,100), dtype=int)
 
-    # print(c.last_output)
+    print('matching windows')
+    res = (windows == match_array).all(axis=(2,3)).nonzero()
 
-    # c = Computer('tractorbeam', inp, debug_level='output')    
-    # c.run_intcode(1)
-    # c.run_intcode(0)
+    for y, x in zip(res[0], res[1]):
+        arr[y, x] = 3
 
-    # print(c.last_output)
-
-    # # output is whether the drone is stationary (0) or being pulled by 
-    # # something (1)
-
+    plt.imshow(arr)
+    plt.show()
+    pass
     # # Answer is 
