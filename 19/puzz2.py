@@ -331,23 +331,22 @@ def run_part1(inp):
     return arr
 
 
-def run_part2_one_value(inp, xy, size):
+def run_part2_one_value(inp, xy, size=None):
     x, y = xy
-    itr = x*size + y
-    perc = itr/(size**2) * 100
+    if size is not None:
+        itr = x*size + y
+        perc = itr/(size**2) * 100
     
     c = Computer('tractorbeam', inp, debug_level='off')    
     c.run_intcode(x)
     c.run_intcode(y)
-    print(f'{perc:.2f}%:', x, y, c.last_output)
+    # print(f'{perc:.2f}%:', x, y, c.last_output)
     return (x, y, c.last_output)
 
 
 def run_part2_1000():
     with open('19/input', 'r') as f:
         inp = f.readline()
-
-    # arr = run_part1(inp)
     
     size = 1000
 
@@ -357,29 +356,84 @@ def run_part2_1000():
     results = [pool.apply(run_part2_one_value, args=(inp, xy, size)) 
                for xy in np.ndindex((size,size))]
     
-    # print([xy for xy in np.ndindex((size,size))])
-
     pool.close()
     
-    with open('19/puzz2.pk', 'wb') as f:
+    with open('19/puzz2_1.pk', 'wb') as f:
         pickle.dump(results, f)
 
+def run_part2_serial(size):
+    with open('19/input', 'r') as f:
+        inp = f.readline()
+
+    arr = np.zeros((size, size), dtype=int)
+    arr[:] = -1
+
+    full_sample = 10
+    print(f'total is {size**2}')
+
+    t = tqdm(total=size**2)
+    for y in range(size):
+        num_zeros = 0
+        if y < full_sample:
+            first_x = 0
+            last_x = size
+            to_check = list(range(first_x, last_x))
+        else: 
+            try:
+                ones_loc = np.where(arr[y-1, :] == 1)[0]
+                first_x = ones_loc.min()
+                last_x = ones_loc.max() + 2
+                to_check = list(range(first_x, last_x))
+                if len(to_check) >= 20:
+                    to_check = to_check[:10] + to_check[-10:]
+                    val = np.where(np.diff(to_check) > 1)[0]
+                    if val:
+                        val = val[0]
+                        set_to_1_range = list(range(to_check[val], 
+                                                    to_check[val+1]))
+                        # print(f'val is {val} + {set_to_1_range}')
+                        arr[y, set_to_1_range] = 1
+            except Exception as e:
+                plt.imshow(arr)
+                plt.show()
+                raise e
+        for x in to_check:
+            xy = (x, y)
+            t.set_description(f'({x}, {y}) - {to_check[0]}/{to_check[-1]}')
+            t.n = y * size + x
+            if y != 0 and y % 1000 == 0 and x == to_check[0]:
+                plt.imshow(arr)
+                plt.show()
+            t.refresh()
+            if x < full_sample and y < full_sample:
+                arr[y, x] = run_part2_one_value(inp, xy)[2]
+            else:
+                arr[y, x] = run_part2_one_value(inp, xy)[2]
+                if arr[y, x] != 0:
+                    num_zeros = 0
+                else:
+                    num_zeros += 1
+                    if num_zeros > 2:
+                        # break when we find more than two zeros in a row
+                        break
+
+    t.close()
+    return arr
+
+
 from skimage.util import view_as_windows
+import pdb
 
 if __name__ == '__main__':
 
-    with open('19/puzz2.pk', 'rb') as f:
-        results = pickle.load(f)
+    # arr = run_part2_serial(5000)
+    # np.savez_compressed('19/part2.npz', arr)
 
-    size = 1000
-    arr = np.zeros((size, size), dtype=int)
-        
-    for tup in results:
-        x, y, val = tup
-        arr[y,x] = val 
+    chunk_start = 600
 
-    # plt.imshow(arr)
-    # plt.show()
+    with np.load('19/part2.npz') as data:
+        arr = data['arr_0'][chunk_start:chunk_start+600, 
+                            chunk_start:chunk_start+600]
 
     print('computing windows...')
     windows = view_as_windows(arr, (100,100))
@@ -388,11 +442,23 @@ if __name__ == '__main__':
 
     print('matching windows')
     res = (windows == match_array).all(axis=(2,3)).nonzero()
+    min_x = res[1][0] + chunk_start
+    min_y = res[0][0] + chunk_start
+    print(f'({min_x}, {min_y})')
+    print(f'{min_x*10000 + min_y}')
 
     for y, x in zip(res[0], res[1]):
         arr[y, x] = 3
 
-    plt.imshow(arr)
+    with np.load('19/part2.npz') as data:
+        arr1 = data['arr_0']
+
+    arr1[chunk_start:chunk_start+600, 
+         chunk_start:chunk_start+600] = arr
+    arr1[min_y:min_y+100, min_x:min_x+100] = 4
+
+    plt.imshow(arr1)
     plt.show()
-    pass
-    # # Answer is 
+
+    # Answer is 7720975
+ 
