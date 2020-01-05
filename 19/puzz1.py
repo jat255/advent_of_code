@@ -373,6 +373,7 @@ if __name__ == '__main__':
     arr = run_part1(inp)
 
     print(arr.sum())
+
     # c = Computer('tractorbeam', inp, debug_level='off')    
     # c.run_intcode(1)
     # c.run_intcode(1)
@@ -395,4 +396,4 @@ if __name__ == '__main__':
     # # output is whether the drone is stationary (0) or being pulled by 
     # # something (1)
 
-    # # Answer is 
+    # # Answer is 215
