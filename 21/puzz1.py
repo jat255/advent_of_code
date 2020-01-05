@@ -436,23 +436,11 @@ if __name__ == "__main__":
 
     run_part1()
 
-    # with open('21/input', 'r') as f:
-    #     inp = f.readline()
-    # instructions = ['NOT A T\n',
-    #                 'NOT C J\n',
-    #                 'OR T J\n',
-    #                 'AND D J\n',
-    #                 'WALK\n']
-    # c = Computer('spring', inp, debug_level='off')    
-    # c.run_intcode()
-    # for i in instructions:
-    #     input_string(c, i)
-    # print(c.last_output)
-
-    # instructions = ['NOT A T\n',
-    #                 'NOT C J\n',
-    #                 'OR T J\n',
-    #                 'AND D J\n']
-    # for i in combos(4):
-    #     if i[0] == 'NOT A T\n' and i[2] == 'OR T J\n':
-    #         print(i)
+    # Running random permutations of length 4 took about 6 minutes until one
+    # worked (running on poole with 12 processors in the pool) (1413720 
+    # permutations)
+    
+    # Answer is 19353565 
+    # ['NOT C J\n', 'NOT A T\n', 'AND D J\n', 'OR T J\n', 'WALK\n']
+    # ['NOT D J\n', 'OR C J\n', 'AND A J\n', 'NOT J J\n', 'WALK\n']
+    
