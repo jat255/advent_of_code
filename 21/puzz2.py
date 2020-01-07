@@ -27,6 +27,7 @@ import random
 from tqdm import tqdm
 import multiprocessing as mp
 import pickle
+import z3
 
 class Computer():
     def __init__(self, name, inp, 
@@ -329,45 +330,48 @@ def run_part1():
                   total=len(combos(4))))
 
 
-def run_part2_one_instruction(instr):
-    global inp
-    instr.append('RUN\n')
+def run_part2():
+    with open('21/input', 'r') as f:
+        inp = f.readline()
+
+    instr = ['NOT D J\nWALK\n']
+
     c = Computer('spring', inp, debug_level='off')    
     c.run_intcode()
     for i in instr:
         input_string(c, i)
-    if c.last_output > 10:
-        print(instr)
-        print(c.last_output)
-        return c.last_output
-    else:
-        return None
 
-def run_part2(num_combs):
-    global inp
-    with open('21/input', 'r') as f:
-        inp = f.readline()
-
-    pool = mp.Pool(mp.cpu_count())
-    to_process = combos(num_combs)
-    random.shuffle(to_process)
+    print_output(c.this_runs_output)
     
-    r = list(tqdm(pool.imap(run_part2_one_instruction, to_process), 
-                  total=len(combos(num_combs))))
 
 if __name__ == "__main__":
     
-    # Your springdroid can detect ground at four distances: one tile away (A),
-    # two tiles away (B), three tiles away (C), and four tiles away (D).
-    # ground is true, hole is false
-
-    run_part2(6)
-
-    # Running random permutations of length 4 took about 6 minutes until one
-    # worked (running on poole with 12 processors in the pool) (1413720 
-    # permutations)
     
-    # Answer is 19353565 
-    # ['NOT C J\n', 'NOT A T\n', 'AND D J\n', 'OR T J\n', 'WALK\n']
-    # ['NOT D J\n', 'OR C J\n', 'AND A J\n', 'NOT J J\n', 'WALK\n']
+    # run_part2()
+
+    instr = ['NOT B T\n',
+             'NOT C J\n',
+             'OR J T\n',
+             'AND D T\n',
+             'NOT E J\n',
+             'NOT J J\n'
+             'OR H J\n',
+             'AND T J\n',
+             'NOT A T\n',
+             'OR T J\n',
+             'RUN\n']
+
+
+    with open('21/input', 'r') as f:
+        inp = f.readline()
+
+    c = Computer('spring', inp, debug_level='off')    
+    c.run_intcode()
     
+    for i in instr:
+        input_string(c, i)
+
+    print(c.last_output)
+    # print_output(c.this_runs_output)
+
+#   Answer is 1140612950

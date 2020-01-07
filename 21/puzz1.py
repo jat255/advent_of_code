@@ -416,7 +416,7 @@ def run_part1_one_instruction(instr):
     else:
         return None
 
-def run_part1():
+def run_part1_brute_force():
     global inp
     with open('21/input', 'r') as f:
         inp = f.readline()
@@ -434,13 +434,64 @@ if __name__ == "__main__":
     # two tiles away (B), three tiles away (C), and four tiles away (D).
     # ground is true, hole is false
 
-    run_part1()
+    # The "Hard" (but really easy) way:
+    # run_part1_brute_force()
+
+    # 
+    # 
+    # The "actually thinking about the problem way":
+
+    # - If there is a hole directly in front of me, I have to jump. Otherwise,
+    #   if there will be a hole in front of me and I can safely land, jump.
+
+    # - A == False is hole directly in front, so I must jump (i.e. Not(A))
+    # - A jump takes 4 spaces, so D must be True where we land
+    # - If there's a hole in B or C (Or(Not(B), Not(C))) and D is ground (D)
+
+    # - Logically:
+
+    #     !A || ((!B || !C) && D)
+
+    # - To convert this into Springcode, we need to take small pieces, store 
+    #   them in `T`, and then go from there:
+
+    #   NOT B T
+    #   NOT C J
+    #   OR J T
+    #   AND D T
+    #   NOT A J
+    #   OR T J
+
+    instr = ['NOT B T\n',
+             'NOT C J\n',
+             'OR J T\n',
+             'AND D T\n',
+             'NOT A J\n',
+             'OR T J\n',
+             'WALK\n']
+
+
+    with open('21/input', 'r') as f:
+        inp = f.readline()
+
+    c = Computer('spring', inp, debug_level='off')    
+    c.run_intcode()
+    
+    for i in instr:
+        input_string(c, i)
+
+    print(c.last_output)
 
     # Running random permutations of length 4 took about 6 minutes until one
     # worked (running on poole with 12 processors in the pool) (1413720 
     # permutations)
     
     # Answer is 19353565 
+
+    # Brute force solutions:
     # ['NOT C J\n', 'NOT A T\n', 'AND D J\n', 'OR T J\n', 'WALK\n']
     # ['NOT D J\n', 'OR C J\n', 'AND A J\n', 'NOT J J\n', 'WALK\n']
     
+    # My solution:
+    # ['NOT B T\n', 'NOT C J\n', 'OR J T\n', 'AND D T\n', 'NOT A J\n', 
+    #  'OR T J\n', 'WALK\n']
