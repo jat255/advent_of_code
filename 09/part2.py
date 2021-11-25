@@ -55,8 +55,9 @@ def v2_decompress(s):
     s = decompress(s)
   return s
 
-def get_nchar_nreps(s):
+def get_nchar_nreps(s, verbose=False):
   nchar, nreps = re.match('\((\d*)x(\d*)\)', s).groups()
+  if verbose: print(f'{nchar=} {nreps=} {s=}')
   l = len(nchar + nreps) + 3
   return (int(nchar), int(nreps), s[l:l + int(nchar)])
 
@@ -88,14 +89,43 @@ def calc_length(s):
                         # =  445
 
 def l_calc(s):
+  print(f'l_calc; {s=}')
   if not '(' in s:
+    print(f'returning {len(s)} for {s=}')
     return len(s)
   c, r, new_s = get_nchar_nreps(s)
   if not '(' in new_s:
+    print(f'returning {len(new_s)} for {new_s=}')
     return len(new_s)
   if '(' in new_s:
+    print(f'recursing {r=} * l_calc(new_s)')
     return r * l_calc(new_s)
   
+def iter_length(s):
+  groups = []
+  i = 0
+  total = 0
+  while i < len(s):
+    if s[i] == '(':
+      # print()
+      # print(f"{i=} {s[i]=} {s=}")
+      # print(f"{s}")
+      # print("0123456789" * (len(s)//10 + 1))
+      c, r, new_s = get_nchar_nreps(s[i:])
+      if '(' in new_s:
+        total += r * iter_length(new_s)
+      else:
+        # print(f"Adding {c=} * {r=} = {c*r} to total")
+        total += c * r
+      i += len(str(c)) + len(str(r)) + 3 + len(new_s)      
+    else:
+      # print()
+      # print(f"{i=} {s[i]=} {s=}")
+      # print(f"{s}")
+      # print("0123456789" * (len(s)//10 + 1))
+      total += 1
+      i += 1
+  return total
 
 # assert v2_decompress('ADVENT') == 'ADVENT'
 # assert v2_decompress('A(1x5)BC') == 'ABBBBBC'
@@ -108,11 +138,11 @@ def l_calc(s):
 # print(calc_length('(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN'))
 # print(calc_length('(3x3)XYZZ'))
 
-print(get_nchar_nreps('(25x3)(3x3)ABC(2x3)XY(5x2)PQRST'))
-print(get_nchar_nreps('(3x3)ABC(2x3)XY(5x2)PQRST'))
-print(l_calc('(25x3)(3x3)ABC(2x3)XY(5x2)PQRST'))
+# print(get_nchar_nreps('(25x3)(3x3)ABC(2x3)XY(5x2)PQRST'))
+# print(get_nchar_nreps('(3x3)ABC(2x3)XY(5x2)PQRST'))
+# print(iter_length('(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN'))
 
 inp = lines[0]
-# print(len(v2_decompress(inp)))
+print(iter_length(inp))
 
-# 110346
+# 10774309173
